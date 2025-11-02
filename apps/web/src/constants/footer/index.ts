@@ -72,7 +72,7 @@ export const footerLinks: FooterLink[] = [
   {
     id: "6",
     text: "Press & Media",
-    href: "/announcement",
+    href: "/press-media",
   },
   {
     id: "7",

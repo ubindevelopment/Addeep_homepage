@@ -36,7 +36,7 @@ export const NAV: Item[] = [
   },
   { label: "Blog & Social Media Channels", href: "/blog-social-media-channel" },
   { label: "Announcement", href: "/announcement" },
-  { label: "Press & Media", href: "/announcement" },
+  { label: "Press & Media", href: "/press-media" },
   { label: "IR Library", href: "/article" },
   { label: "Event", href: "/events" },
 ];

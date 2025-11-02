@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -14,6 +14,7 @@ import { NAV, type DefaultLinkType } from "../constants/nav";
 import { NEXT_PUBLIC_CDN_BASE } from "../lib/env";
 
 export default function SiteNav() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [exp, setExp] = useState<Record<string, boolean>>({});
 
@@ -60,12 +61,13 @@ export default function SiteNav() {
             <SiteNavHamburgerIcon className="h-8 w-8 text-gray-900" />
           </button>
           <div aria-hidden className="flex-1" />
-          <img
-            src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
-            alt="logo"
-            className="h-9 w-10"
-          />
-          {/* 오버레이는 Portal로 띄워서 나머지 레이아웃에 영향 X */}
+          <div className="cursor-pointer" onClick={() => router.push("/")}>
+            <img
+              src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
+              alt="logo"
+              className="h-9 w-10"
+            />
+          </div>
           {open &&
             typeof window !== "undefined" &&
             createPortal(
@@ -182,11 +184,13 @@ export default function SiteNav() {
 
           <div aria-hidden className="flex-1" />
           {!disableLogo && (
-            <img
-              src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
-              alt="logo"
-              className="h-14 w-16"
-            />
+            <div className="cursor-pointer" onClick={() => router.push("/")}>
+              <img
+                src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
+                alt="logo"
+                className="h-14 w-16"
+              />
+            </div>
           )}
         </div>
       </header>
