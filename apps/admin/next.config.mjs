@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // output: "standalone", // Vercel 배포를 위해 주석 처리 (Docker 배포 시에만 필요)
   env: {
     port: "3001",
   },
