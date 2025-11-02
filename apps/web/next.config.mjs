@@ -2,7 +2,7 @@
 import "dotenv/config";
 
 const nextConfig = {
-  output: "standalone",
+  // output: "standalone",
   reactStrictMode: false,
   transpilePackages: ["app"],
   eslint: {
@@ -86,6 +86,10 @@ const nextConfig = {
           {
             key: "Access-Control-Allow-Origin",
             value: "*",
+          },
+          {
+            key: "Accept-Ranges",
+            value: "none",
           },
         ],
       },

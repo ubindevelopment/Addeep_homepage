@@ -1,252 +1,167 @@
-# Addeep
+# Addeep Monorepo
+
+This is a Turborepo monorepo containing the Addeep web platform and admin dashboard.
+
+## 🏗️ Project Structure
 
 ```
-yuu
-├─ .cursorrules
-├─ .yarnrc.yml
-├─ Dockerfile
-├─ README.md
-├─ admin
-│  ├─ .yarnrc.yml
-│  ├─ Dockerfile
-│  ├─ README_E2E.md
-│  ├─ e2e
-│  │  ├─ README.md
-│  │  ├─ announcement.spec.ts
-│  │  ├─ article.spec.ts
-│  │  ├─ auth.spec.ts
-│  │  ├─ dashboard.spec.ts
-│  │  ├─ events.spec.ts
-│  │  ├─ example.spec.ts
-│  │  ├─ helpers
-│  │  │  ├─ auth.ts
-│  │  │  └─ common.ts
-│  │  └─ news.spec.ts
-│  ├─ lib
-│  │  └─ supabase.ts
-│  ├─ middleware.ts
-│  ├─ next-env.d.ts
-│  ├─ next.config.mjs
-│  ├─ package.json
-│  ├─ playwright.config.ts
-│  ├─ postcss.config.js
-│  ├─ src
-│  │  └─ app
-│  │     ├─ components
-│  │     │  ├─ custom-table
-│  │     │  │  └─ index.tsx
-│  │     │  ├─ modal
-│  │     │  │  └─ index.tsx
-│  │     │  └─ providers
-│  │     │     └─ query-provider.tsx
-│  │     ├─ context
-│  │     │  └─ ThemeProvider.tsx
-│  │     ├─ dashboard
-│  │     │  ├─ announcement
-│  │     │  │  ├─ [id]
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  ├─ actions.ts
-│  │     │  │  ├─ create
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  └─ edit
-│  │     │  │     └─ [id]
-│  │     │  │        └─ page.tsx
-│  │     │  ├─ article
-│  │     │  │  ├─ [id]
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  ├─ actions.ts
-│  │     │  │  ├─ create
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  └─ edit
-│  │     │  │     └─ [id]
-│  │     │  │        └─ page.tsx
-│  │     │  ├─ events
-│  │     │  │  ├─ [id]
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  ├─ actions.ts
-│  │     │  │  ├─ create
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  └─ edit
-│  │     │  │     └─ [id]
-│  │     │  │        └─ page.tsx
-│  │     │  ├─ news
-│  │     │  │  ├─ [id]
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  ├─ actions.ts
-│  │     │  │  ├─ create
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  └─ edit
-│  │     │  │     └─ [id]
-│  │     │  │        └─ page.tsx
-│  │     │  └─ page.tsx
-│  │     ├─ globals.css
-│  │     ├─ layout.tsx
-│  │     ├─ lib
-│  │     │  ├─ index.ts
-│  │     │  └─ useOutsideClick.tsx
-│  │     ├─ page.tsx
-│  │     ├─ public
-│  │     └─ store
-│  │        ├─ commonConfig.ts
-│  │        └─ interface
-│  │           ├─ announcement.ts
-│  │           ├─ article.ts
-│  │           ├─ event.ts
-│  │           └─ news.ts
-│  ├─ store
-│  │  └─ authStore.ts
-│  ├─ tailwind.config.ts
-│  ├─ tsconfig.json
-│  └─ types
-│     └─ auth.ts
-├─ cloudbuild.yaml
-├─ cors.json
-├─ deploy.sh
-├─ doc
-│  ├─ doc-filelist.js
-│  ├─ doc-script.js
-│  └─ doc-style.css
-├─ docker-compose.yml
-├─ global.css
-├─ global.d.ts
-├─ infra
-│  ├─ main.tf
-│  ├─ outputs.tf
-│  └─ variables.tf
-├─ next-env.d.ts
-├─ next.config.mjs
-├─ package.json
-├─ postcss.config.js
-├─ public
-│  ├─ fonts
-│  │  ├─ montserrat
-│  │  │  ├─ Montserrat-Black.ttf
-│  │  │  ├─ Montserrat-Bold.ttf
-│  │  │  ├─ Montserrat-ExtraBold.ttf
-│  │  │  ├─ Montserrat-Medium.ttf
-│  │  │  ├─ Montserrat-Regular.ttf
-│  │  │  └─ Montserrat-SemiBold.ttf
-│  │  └─ poppins
-│  │     ├─ Poppins-Black.ttf
-│  │     ├─ Poppins-Bold.ttf
-│  │     ├─ Poppins-ExtraBold.ttf
-│  │     ├─ Poppins-Light.ttf
-│  │     ├─ Poppins-Medium.ttf
-│  │     ├─ Poppins-Regular.ttf
-│  │     └─ Poppins-SemiBold.ttf
-│  ├─ images
-│  │  ├─ Background.png
-│  │  ├─ Career_Background.png
-│  │  ├─ Container.png
-│  │  ├─ Gradient.png
-│  │  ├─ Innovation.png
-│  │  ├─ Platform.png
-│  │  ├─ Summary.png
-│  │  ├─ about-us-header.png
-│  │  ├─ about-us-slider-1.png
-│  │  ├─ addeep-is-image.png
-│  │  ├─ good-face.png
-│  │  ├─ jaeyoung.png
-│  │  ├─ jessica.png
-│  │  ├─ kyoungsu.png
-│  │  ├─ person-fisheye.png
-│  │  ├─ seyoung.png
-│  │  ├─ smiling-man.png
-│  │  ├─ social.png
-│  │  ├─ three-people.png
-│  │  ├─ we-are-frame-1.png
-│  │  ├─ we-are-frame-2.png
-│  │  └─ we-are-frame-3.png
-│  └─ robots.txt
-├─ src
-│  ├─ app
-│  │  ├─ (landing)
-│  │  │  ├─ about-us
-│  │  │  │  ├─ careers
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  ├─ core-value
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  ├─ team-work
-│  │  │  │  │  ├─ jaeyoung
-│  │  │  │  │  │  └─ page.tsx
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  └─ we-are
-│  │  │  │     └─ page.tsx
-│  │  │  ├─ addeep-is
-│  │  │  │  ├─ digital-platform-innovation
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  ├─ platform-to-earn
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  └─ summary
-│  │  │  │     ├─ gpr
-│  │  │  │     │  └─ page.tsx
-│  │  │  │     └─ page.tsx
-│  │  │  ├─ announcement
-│  │  │  │  ├─ [uuid]
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  └─ page.tsx
-│  │  │  ├─ article
-│  │  │  │  └─ page.tsx
-│  │  │  ├─ blog-social-media-channel
-│  │  │  │  └─ page.tsx
-│  │  │  ├─ events
-│  │  │  │  ├─ [uuid]
-│  │  │  │  │  └─ page.tsx
-│  │  │  │  └─ page.tsx
-│  │  │  ├─ news
-│  │  │  │  └─ page.tsx
-│  │  │  └─ page.tsx
-│  │  ├─ layout.tsx
-│  │  └─ robots.ts
-│  ├─ components
-│  │  ├─ EventSpeakerSlider.tsx
-│  │  ├─ Footer.tsx
-│  │  ├─ SiteNav.tsx
-│  │  └─ YoutubePlayer.tsx
-│  ├─ constants
-│  │  ├─ announcement
-│  │  │  └─ index.tsx
-│  │  ├─ blog
-│  │  │  └─ index.tsx
-│  │  ├─ careers
-│  │  │  └─ index.tsx
-│  │  ├─ core-values
-│  │  │  └─ index.tsx
-│  │  ├─ footer
-│  │  │  └─ index.ts
-│  │  ├─ index.ts
-│  │  ├─ landing
-│  │  │  └─ index.ts
-│  │  ├─ nav
-│  │  │  ├─ index.ts
-│  │  │  └─ logo.tsx
-│  │  ├─ summary
-│  │  │  └─ index.tsx
-│  │  └─ we-are
-│  │     └─ index.ts
-│  ├─ icons
-│  │  └─ index.tsx
-│  ├─ lib
-│  │  ├─ env.ts
-│  │  ├─ supabase.ts
-│  │  ├─ useOutsideClick.ts
-│  │  └─ useResponsive.ts
-│  ├─ shared
-│  │  ├─ provider
-│  │  │  └─ QueryProvider.tsx
-│  │  ├─ types
-│  │  │  ├─ announcement.ts
-│  │  │  └─ event.ts
-│  │  └─ utils
-│  │     ├─ formatKoreanDate.ts
-│  │     └─ index.ts
-│  └─ types
-│     ├─ announcement
-│     │  └─ index.ts
-│     └─ blog
-│        └─ index.ts
-├─ tailwind.config.ts
-├─ tsconfig.json
-└─ yarn.lock
-
+addeep/
+├── apps/
+│   ├── web/          # Main website (Next.js)
+│   └── admin/        # Admin dashboard (Next.js)
+├── doc/              # Documentation
+├── infra/            # Infrastructure (Terraform)
+└── package.json      # Root package.json (workspace configuration)
 ```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Yarn 4.9.2+
+
+### Installation
+
+```bash
+# Install dependencies
+yarn install
+```
+
+### Development
+
+```bash
+# Run all apps in dev mode
+yarn dev
+
+# Run specific app
+yarn dev:web      # Main website on http://localhost:3000
+yarn dev:admin    # Admin dashboard on http://localhost:3001
+```
+
+### Build
+
+```bash
+# Build all apps
+yarn build
+
+# Build specific app
+yarn build:web
+yarn build:admin
+```
+
+### Start Production
+
+```bash
+# Start all apps in production mode
+yarn start
+```
+
+## 📦 Apps
+
+### Web (`apps/web`)
+
+The main Addeep website built with Next.js, featuring:
+
+- Landing pages
+- Blog & News
+- Events & Announcements
+- Company information
+
+**Tech Stack:**
+
+- Next.js 15
+- React 19
+- TanStack Query
+- Zustand
+- Tailwind CSS
+- GSAP
+
+### Admin (`apps/admin`)
+
+The admin dashboard for managing content, built with Next.js and Material-UI:
+
+- Content management (News, Events, Announcements, Articles)
+- Authentication with Supabase
+- Material React Table
+- E2E testing with Playwright
+
+**Tech Stack:**
+
+- Next.js 15
+- React 19
+- Material-UI
+- TanStack Query
+- Zustand
+- Supabase
+
+## 🔧 Tools & Technologies
+
+- **Monorepo Management**: Turborepo
+- **Package Manager**: Yarn 4 (with workspaces)
+- **Backend**: Supabase
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **Data Fetching**: TanStack React Query
+- **Testing**: Playwright (E2E)
+
+## 📝 Scripts
+
+| Command            | Description                      |
+| ------------------ | -------------------------------- |
+| `yarn dev`         | Run all apps in development mode |
+| `yarn dev:web`     | Run web app only                 |
+| `yarn dev:admin`   | Run admin app only               |
+| `yarn build`       | Build all apps                   |
+| `yarn build:web`   | Build web app only               |
+| `yarn build:admin` | Build admin app only             |
+| `yarn start`       | Start all apps in production     |
+| `yarn lint`        | Lint all apps                    |
+
+## 🚢 Deployment
+
+### Vercel
+
+**Web App:**
+
+- Root Directory: `apps/web`
+- Build Command: `cd ../.. && yarn build:web`
+- Output Directory: `apps/web/.next`
+- Install Command: `yarn install`
+
+**Admin App:**
+
+- Root Directory: `apps/admin`
+- Build Command: `cd ../.. && yarn build:admin`
+- Output Directory: `apps/admin/.next`
+- Install Command: `yarn install`
+
+### Docker
+
+Each app has its own Dockerfile for containerized deployment.
+
+```bash
+# Build web app
+docker build -f apps/web/Dockerfile -t addeep-web .
+
+# Build admin app
+docker build -f apps/admin/Dockerfile -t addeep-admin .
+```
+
+## 📚 Documentation
+
+- [E2E Testing Guide](apps/admin/README_E2E.md)
+- [Admin Deployment Guide](apps/admin/DEPLOYMENT.md)
+- [Figma MCP Setup](FIGMA_MCP_SETUP.md)
+- [Maintenance Setup](MAINTENANCE_SETUP.md)
+
+## 🔐 Environment Variables
+
+Each app requires its own environment variables. See:
+
+- `apps/web/.env.local.example`
+- `apps/admin/.env.local.example`
+
+## 📄 License
+
+Private - Addeep Inc.
