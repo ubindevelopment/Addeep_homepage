@@ -7,13 +7,13 @@ import { supabase } from "../../../lib/supabase";
 import CustomTable from "../components/custom-table";
 import { Announcement } from "../store/interface/announcement";
 import { Event } from "../store/interface/event";
-import { News } from "../store/interface/news";
+import { PressMedia } from "../store/interface/press-media";
 import { IRMaterial } from "../store/interface/ir-material";
 import { tableConfig } from "../store/commonConfig";
 import { toggleMaintenanceMode } from "./maintenance-actions";
 
-type TableType = "announcement" | "events" | "news" | "ir_materials";
-type DataType = Announcement | Event | News | IRMaterial;
+type TableType = "announcement" | "events" | "press_media" | "ir_materials";
+type DataType = Announcement | Event | PressMedia | IRMaterial;
 
 function DashboardContent() {
   const router = useRouter();
@@ -219,8 +219,8 @@ function DashboardContent() {
       ),
     },
     {
-      key: "news",
-      label: "뉴스",
+      key: "press_media",
+      label: "보도자료",
       icon: (
         <svg
           className="w-4 h-4"

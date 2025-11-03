@@ -6,20 +6,20 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Modal } from "../../../components/modal";
 import { supabase } from "../../../../../lib/supabase";
-import { News } from "../../../store/interface/news";
-import { deleteNews } from "../actions";
+import { PressMedia } from "../../../store/interface/press-media";
+import { deletePressMedia } from "../actions";
 
-export default function NewsDetailPage() {
+export default function PressMediaDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as unknown as number;
+  const id = params.id as string;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const getNewsDetailData = async () => {
+  const getPressMediaDetailData = async () => {
     try {
       const { data, error } = await supabase
-        .from("news")
+        .from("press_media")
         .select("*")
         .eq("id", id)
         .single();
@@ -30,52 +30,50 @@ export default function NewsDetailPage() {
       }
       return data;
     } catch (err) {
-      console.error(`getNewsDetailData 에러:`, err);
+      console.error(`getPressMediaDetailData 에러:`, err);
       throw err;
     }
   };
 
-  const deleteNewsDetailData = async (id: number) => {
+  const deletePressMediaDetailData = async (id: string) => {
     try {
-      const result = await deleteNews(id);
+      const result = await deletePressMedia(id);
       return result.data;
     } catch (err) {
-      console.error(`deleteNewsDetailData 에러:`, err);
+      console.error(`deletePressMediaDetailData 에러:`, err);
       throw err;
     }
   };
 
   const {
-    data: NewsDetail,
+    data: PressMediaDetail,
     isLoading,
     error,
-  } = useQuery<News>({
-    queryKey: ["newsDetail", id],
-    queryFn: () => getNewsDetailData(),
+  } = useQuery<PressMedia>({
+    queryKey: ["pressMediaDetail", id],
+    queryFn: () => getPressMediaDetailData(),
     retry: 0,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     staleTime: 30000,
   });
 
-  const { mutate: deleteNewsDetailDataMutation } = useMutation({
-    mutationFn: (id: number) => deleteNewsDetailData(id),
+  const { mutate: deletePressMediaDetailDataMutation } = useMutation({
+    mutationFn: (id: string) => deletePressMediaDetailData(id),
     onSuccess: () => {
       alert("삭제가 정상적으로 완료 되었습니다.");
       router.push("/dashboard");
     },
     onError: (error) => {
-      console.error("deleteNewsDetailData 에러:", error);
+      console.error("deletePressMediaDetailData 에러:", error);
     },
   });
 
-  console.log(NewsDetail);
-
-  function handleEdit(id: number): void {
-    router.push(`/dashboard/news/edit/${id}`);
+  function handleEdit(id: string): void {
+    router.push(`/dashboard/press-media/edit/${id}`);
   }
 
-  function handleDelete(id: number): void {
+  function handleDelete(id: string): void {
     console.log("삭제:", id);
     setIsModalOpen(true);
   }
@@ -143,7 +141,7 @@ export default function NewsDetailPage() {
     );
   }
 
-  if (!NewsDetail) {
+  if (!PressMediaDetail) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-dark-50 via-primary-50/30 to-dark-50">
         <div className="text-center">
@@ -215,18 +213,18 @@ export default function NewsDetailPage() {
                     d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
                   />
                 </svg>
-                뉴스
+                보도자료
               </div>
               <h1 className="text-3xl font-bold text-dark-900 mb-2">
-                {NewsDetail.title}
+                {PressMediaDetail.title}
               </h1>
               <p className="text-dark-600 text-sm">
-                작성일: {formatDate(NewsDetail.created_at)}
+                발행일: {formatDate(PressMediaDetail.published_date)}
               </p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => handleEdit(NewsDetail.id)}
+                onClick={() => handleEdit(PressMediaDetail.id)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-all duration-200 shadow-soft"
               >
                 <svg
@@ -245,7 +243,7 @@ export default function NewsDetailPage() {
                 수정
               </button>
               <button
-                onClick={() => handleDelete(NewsDetail.id)}
+                onClick={() => handleDelete(PressMediaDetail.id)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 shadow-soft"
               >
                 <svg
@@ -279,7 +277,7 @@ export default function NewsDetailPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-dark-900 font-medium">
-                    {NewsDetail.title}
+                    {PressMediaDetail.title}
                   </p>
                 </div>
               </div>
@@ -294,8 +292,72 @@ export default function NewsDetailPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-dark-600 whitespace-pre-wrap">
-                    {NewsDetail.content}
+                    {PressMediaDetail.content}
                   </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 hover:bg-dark-50/50 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-32">
+                  <span className="text-sm font-semibold text-dark-700">
+                    발행일
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 text-dark-600">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    {formatDate(PressMediaDetail.published_date)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 hover:bg-dark-50/50 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-32">
+                  <span className="text-sm font-semibold text-dark-700">
+                    표시 순서
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-dark-600">
+                    {PressMediaDetail.display_order}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 hover:bg-dark-50/50 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-32">
+                  <span className="text-sm font-semibold text-dark-700">
+                    추천 보도자료
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-semibold ${
+                      PressMediaDetail.is_featured
+                        ? "bg-primary-100 text-primary-700"
+                        : "bg-dark-100 text-dark-600"
+                    }`}
+                  >
+                    {PressMediaDetail.is_featured ? "예" : "아니오"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -322,13 +384,13 @@ export default function NewsDetailPage() {
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
-                    {formatDate(NewsDetail.created_at)}
+                    {formatDate(PressMediaDetail.created_at)}
                   </div>
                 </div>
               </div>
             </div>
 
-            {NewsDetail.image && (
+            {PressMediaDetail.image_url && (
               <div className="px-8 py-6 hover:bg-dark-50/50 transition-colors">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-32">
@@ -339,8 +401,8 @@ export default function NewsDetailPage() {
                   <div className="flex-1">
                     <div className="relative rounded-xl overflow-hidden shadow-medium border border-dark-200 max-w-2xl">
                       <img
-                        src={NewsDetail.image}
-                        alt={String(NewsDetail.id)}
+                        src={PressMediaDetail.image_url}
+                        alt={PressMediaDetail.title}
                         className="w-full h-auto"
                       />
                     </div>
@@ -382,7 +444,8 @@ export default function NewsDetailPage() {
 
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <p className="text-sm text-red-800">
-              정말로 <span className="font-semibold">"{NewsDetail.title}"</span>
+              정말로{" "}
+              <span className="font-semibold">"{PressMediaDetail.title}"</span>
               을(를) 삭제하시겠습니까?
             </p>
           </div>
@@ -395,7 +458,7 @@ export default function NewsDetailPage() {
               취소
             </button>
             <button
-              onClick={() => deleteNewsDetailDataMutation(id)}
+              onClick={() => deletePressMediaDetailDataMutation(id)}
               className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors shadow-soft"
             >
               삭제하기

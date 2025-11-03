@@ -2,19 +2,25 @@
 
 import { supabaseAdmin } from "../../../../lib/supabase";
 
-export async function createNews(data: {
+export async function createPressMedia(data: {
   title: string;
   content: string;
-  image?: string;
+  image_url?: string;
+  published_date: string;
+  is_featured?: boolean;
+  display_order?: number;
 }) {
   try {
     const { data: result, error } = await supabaseAdmin
-      .from("news")
+      .from("press_media")
       .insert([
         {
           title: data.title,
           content: data.content,
-          image: data.image || null,
+          image_url: data.image_url || null,
+          published_date: data.published_date,
+          is_featured: data.is_featured || false,
+          display_order: data.display_order || 0,
         },
       ])
       .select()
@@ -27,26 +33,32 @@ export async function createNews(data: {
 
     return { success: true, data: result };
   } catch (err) {
-    console.error("createNews 에러:", err);
+    console.error("createPressMedia 에러:", err);
     throw err;
   }
 }
 
-export async function updateNews(
-  id: number,
+export async function updatePressMedia(
+  id: string,
   data: {
     title: string;
     content: string;
-    image?: string;
+    image_url?: string;
+    published_date: string;
+    is_featured?: boolean;
+    display_order?: number;
   }
 ) {
   try {
     const { data: result, error } = await supabaseAdmin
-      .from("news")
+      .from("press_media")
       .update({
         title: data.title,
         content: data.content,
-        image: data.image || null,
+        image_url: data.image_url || null,
+        published_date: data.published_date,
+        is_featured: data.is_featured || false,
+        display_order: data.display_order || 0,
       })
       .eq("id", id)
       .select()
@@ -59,15 +71,15 @@ export async function updateNews(
 
     return { success: true, data: result };
   } catch (err) {
-    console.error("updateNews 에러:", err);
+    console.error("updatePressMedia 에러:", err);
     throw err;
   }
 }
 
-export async function deleteNews(id: number) {
+export async function deletePressMedia(id: string) {
   try {
     const { data, error } = await supabaseAdmin
-      .from("news")
+      .from("press_media")
       .delete()
       .eq("id", id);
 
@@ -78,7 +90,7 @@ export async function deleteNews(id: number) {
 
     return { success: true, data };
   } catch (err) {
-    console.error("deleteNews 에러:", err);
+    console.error("deletePressMedia 에러:", err);
     throw err;
   }
 }
