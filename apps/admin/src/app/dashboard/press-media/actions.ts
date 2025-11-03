@@ -6,6 +6,10 @@ export async function createPressMedia(data: {
   title: string;
   content: string;
   image_url?: string;
+  file_url?: string;
+  file_name?: string;
+  file_type?: string;
+  file_size?: number;
   published_date: string;
   is_featured?: boolean;
   display_order?: number;
@@ -18,6 +22,10 @@ export async function createPressMedia(data: {
           title: data.title,
           content: data.content,
           image_url: data.image_url || null,
+          file_url: data.file_url || null,
+          file_name: data.file_name || null,
+          file_type: data.file_type || null,
+          file_size: data.file_size || null,
           published_date: data.published_date,
           is_featured: data.is_featured || false,
           display_order: data.display_order || 0,
@@ -44,6 +52,10 @@ export async function updatePressMedia(
     title: string;
     content: string;
     image_url?: string;
+    file_url?: string;
+    file_name?: string;
+    file_type?: string;
+    file_size?: number;
     published_date: string;
     is_featured?: boolean;
     display_order?: number;
@@ -56,6 +68,10 @@ export async function updatePressMedia(
         title: data.title,
         content: data.content,
         image_url: data.image_url || null,
+        file_url: data.file_url || null,
+        file_name: data.file_name || null,
+        file_type: data.file_type || null,
+        file_size: data.file_size || null,
         published_date: data.published_date,
         is_featured: data.is_featured || false,
         display_order: data.display_order || 0,
@@ -91,6 +107,38 @@ export async function deletePressMedia(id: string) {
     return { success: true, data };
   } catch (err) {
     console.error("deletePressMedia 에러:", err);
+    throw err;
+  }
+}
+
+export async function uploadPressFile(file: File) {
+  try {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `press-media/${fileName}`;
+
+    const { data, error } = await supabaseAdmin.storage
+      .from("press-media")
+      .upload(filePath, file);
+
+    if (error) {
+      console.error("파일 업로드 에러:", error);
+      throw error;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage.from("press-media").getPublicUrl(filePath);
+
+    return {
+      success: true,
+      file_url: publicUrl,
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+    };
+  } catch (err) {
+    console.error("uploadPressFile 에러:", err);
     throw err;
   }
 }

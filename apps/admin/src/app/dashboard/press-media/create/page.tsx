@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { createPressMedia } from "../actions";
+import { createPressMedia, uploadPressFile } from "../actions";
 
 export default function CreatePressMediaPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -16,13 +18,26 @@ export default function CreatePressMediaPage() {
     display_order: 0,
   });
 
+  const [fileData, setFileData] = useState<{
+    file?: File;
+    file_url?: string;
+    file_name?: string;
+    file_type?: string;
+    file_size?: number;
+  }>({});
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   const { mutate: createPressMediaMutation, isPending } = useMutation({
     mutationFn: (data: {
       title: string;
       content: string;
       image_url?: string;
+      file_url?: string;
+      file_name?: string;
+      file_type?: string;
+      file_size?: number;
       published_date: string;
       is_featured?: boolean;
       display_order?: number;
@@ -52,6 +67,44 @@ export default function CreatePressMediaPage() {
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 체크 (50MB 제한)
+    if (file.size > 50 * 1024 * 1024) {
+      alert("파일 크기는 50MB를 초과할 수 없습니다.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const result = await uploadPressFile(file);
+      setFileData({
+        file,
+        file_url: result.file_url,
+        file_name: result.file_name,
+        file_type: result.file_type,
+        file_size: result.file_size,
+      });
+      if (errors.file) {
+        setErrors((prev) => ({ ...prev, file: "" }));
+      }
+    } catch (error) {
+      console.error("파일 업로드 에러:", error);
+      alert("파일 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -78,7 +131,10 @@ export default function CreatePressMediaPage() {
       return;
     }
 
-    createPressMediaMutation(formData);
+    createPressMediaMutation({
+      ...formData,
+      ...fileData,
+    });
   };
 
   const handleCancel = () => {
@@ -330,6 +386,47 @@ export default function CreatePressMediaPage() {
                 </p>
               </div>
 
+              {/* File Upload Field */}
+              <div>
+                <label className="block text-sm font-semibold text-dark-900 mb-2">
+                  첨부파일 업로드
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="px-6 py-3 bg-dark-100 hover:bg-dark-200 text-dark-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? "업로드 중..." : "파일 선택"}
+                  </button>
+                  {fileData.file_name && (
+                    <div className="flex-1">
+                      <p className="text-sm text-dark-700 font-medium">
+                        {fileData.file_name}
+                      </p>
+                      <p className="text-xs text-dark-500">
+                        {formatFileSize(fileData.file_size)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {errors.file && (
+                  <p className="mt-2 text-sm text-red-600">{errors.file}</p>
+                )}
+                <p className="mt-2 text-xs text-dark-500">
+                  지원 형식: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP (최대
+                  50MB)
+                </p>
+              </div>
+
               {/* Is Featured Checkbox */}
               <div>
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -360,7 +457,7 @@ export default function CreatePressMediaPage() {
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isUploading}
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-600 transition-all duration-200 shadow-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? "생성 중..." : "생성하기"}

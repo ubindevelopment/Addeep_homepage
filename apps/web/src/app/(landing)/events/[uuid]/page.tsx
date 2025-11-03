@@ -275,13 +275,17 @@ const EventDetailHeader = ({
               <div className="flex flex-col gap-2">
                 <div className="text-xl font-bold text-[#BD19F1]">일정</div>
                 <div className="text-lg font-normal text-white">
-                  {eventDetail?.[0].Hero.date}
+                  {eventDetail?.[0]?.hero_data?.date ||
+                    eventDetail?.[0]?.event_date ||
+                    "-"}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="text-xl font-bold text-[#BD19F1]">장소</div>
                 <div className="text-lg font-normal text-white">
-                  {eventDetail?.[0].Hero.space}
+                  {eventDetail?.[0]?.hero_data?.location ||
+                    eventDetail?.[0]?.location ||
+                    "-"}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
@@ -289,7 +293,7 @@ const EventDetailHeader = ({
                   사전 신청 기간
                 </div>
                 <div className="text-lg font-normal text-white">
-                  {eventDetail?.[0].Hero.pre}
+                  {eventDetail?.[0]?.hero_data?.pre || "-"}
                 </div>
               </div>
             </div>
@@ -337,13 +341,17 @@ const EventDetailHeader = ({
             <div className="flex flex-col gap-2">
               <div className="text-2xl font-bold text-[#BD19F1]">일정</div>
               <div className="text-lg font-normal text-white">
-                {eventDetail?.[0].Hero.date}
+                {eventDetail?.[0]?.hero_data?.date ||
+                  eventDetail?.[0]?.event_date ||
+                  "-"}
               </div>
             </div>
             <div className="flex flex-col gap-2">
               <div className="text-2xl font-bold text-[#BD19F1]">장소</div>
               <div className="text-lg font-normal text-white">
-                {eventDetail?.[0].Hero.space}
+                {eventDetail?.[0]?.hero_data?.location ||
+                  eventDetail?.[0]?.location ||
+                  "-"}
               </div>
             </div>
             <div className="flex flex-col gap-2">
@@ -351,7 +359,7 @@ const EventDetailHeader = ({
                 사전 신청 기간
               </div>
               <div className="text-lg font-normal text-white">
-                {eventDetail?.[0].Hero.pre}
+                {eventDetail?.[0]?.hero_data?.pre || "-"}
               </div>
             </div>
           </div>

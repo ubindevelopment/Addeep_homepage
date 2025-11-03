@@ -18,6 +18,7 @@ type NoticeItem = {
   title: string;
   description: string;
   created_at: string; // "2024-01-08" 또는 Date ISO
+  event_date?: string; // 실제 이벤트 날짜
   href?: string; // 상세 페이지 링크 (옵션)
   day?: string;
   video_link?: string;
@@ -113,8 +114,14 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                       <p className="mt-2 text-neutral-500">{it.description}</p>
                       <div className="mt-6 flex items-center gap-2 text-neutral-500">
                         <CalendarIcon />
-                        <time dateTime={it.created_at} className="text-sm">
-                          {formatKoreanDate(it.created_at)} {it.day}
+                        <time
+                          dateTime={it.event_date || it.created_at}
+                          className="text-sm"
+                        >
+                          {it.event_date
+                            ? formatKoreanDate(it.event_date)
+                            : formatKoreanDate(it.created_at)}{" "}
+                          {it.day}
                         </time>
                       </div>
                       {it.video_link && (
@@ -184,8 +191,14 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                     <p className="mt-2 text-neutral-500">{it.description}</p>
                     <div className="mt-6 flex items-center gap-2 text-neutral-500">
                       <CalendarIcon />
-                      <time dateTime={it.created_at} className="text-sm">
-                        {formatKoreanDate(it.created_at)} {it.day}
+                      <time
+                        dateTime={it.event_date || it.created_at}
+                        className="text-sm"
+                      >
+                        {it.event_date
+                          ? formatKoreanDate(it.event_date)
+                          : formatKoreanDate(it.created_at)}{" "}
+                        {it.day}
                       </time>
                     </div>
                     {it.video_link && (

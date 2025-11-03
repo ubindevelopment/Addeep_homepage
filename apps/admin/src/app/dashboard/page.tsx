@@ -149,7 +149,9 @@ function DashboardContent() {
   );
 
   const handleRowClick = (id: number) => {
-    router.push(`/dashboard/${activeTab}/${id}`);
+    // Convert underscores to hyphens for routing
+    const routePath = activeTab.replace(/_/g, "-");
+    router.push(`/dashboard/${routePath}/${id}`);
   };
 
   const table = useMaterialReactTable({
@@ -467,7 +469,11 @@ function DashboardContent() {
                 ))}
               </div>
               <button
-                onClick={() => router.push(`/dashboard/${activeTab}/create`)}
+                onClick={() => {
+                  // Convert underscores to hyphens for routing
+                  const routePath = activeTab.replace(/_/g, "-");
+                  router.push(`/dashboard/${routePath}/create`);
+                }}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-600 transition-all duration-200 shadow-medium"
               >
                 <svg

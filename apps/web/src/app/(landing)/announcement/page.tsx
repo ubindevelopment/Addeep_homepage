@@ -113,7 +113,13 @@ function AnnouncementContent() {
         throw error;
       }
 
-      return { data, count };
+      // Add href to each announcement item
+      const dataWithHref = data?.map((item) => ({
+        ...item,
+        href: `/announcement/${item.id}`,
+      }));
+
+      return { data: dataWithHref, count };
     } catch (err) {
       console.error("getAnnouncementData 에러:", err);
       throw err;
