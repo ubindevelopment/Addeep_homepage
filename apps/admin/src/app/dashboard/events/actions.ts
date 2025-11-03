@@ -10,9 +10,63 @@ interface PersonDetail {
   desc: string[];
 }
 
+interface AgendaItem {
+  time: string;
+  title: string;
+  subTitle?: string;
+  duration: string;
+  speaker?: string;
+  desc?: string[];
+}
+
+interface HeroData {
+  title?: string[];
+  description?: string[];
+  date?: string;
+  location?: string;
+}
+
+export async function uploadEventImage(file: File) {
+  try {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `event-images/${fileName}`;
+
+    const { data, error } = await supabaseAdmin.storage
+      .from("event-images")
+      .upload(filePath, file);
+
+    if (error) {
+      console.error("파일 업로드 에러:", error);
+      throw error;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage.from("event-images").getPublicUrl(filePath);
+
+    return {
+      success: true,
+      url: publicUrl,
+    };
+  } catch (err) {
+    console.error("uploadEventImage 에러:", err);
+    throw err;
+  }
+}
+
 export async function createEvent(data: {
   title: string;
   description: string;
+  thumbnail_url?: string;
+  video_link?: string;
+  event_date?: string;
+  location?: string;
+  form_link?: string;
+  hero_data?: HeroData;
+  agenda_data?: AgendaItem[];
+  speaker_images?: string[];
+  detail_content?: string;
   banner_description?: string[];
   persons?: PersonDetail[];
 }) {
@@ -23,6 +77,15 @@ export async function createEvent(data: {
         {
           title: data.title,
           description: data.description,
+          thumbnail_url: data.thumbnail_url || null,
+          video_link: data.video_link || null,
+          event_date: data.event_date || null,
+          location: data.location || null,
+          form_link: data.form_link || null,
+          hero_data: data.hero_data || null,
+          agenda_data: data.agenda_data || null,
+          speaker_images: data.speaker_images || null,
+          detail_content: data.detail_content || null,
           banner_description: data.banner_description || null,
           Person: data.persons ? { data: data.persons } : null,
         },
@@ -47,6 +110,15 @@ export async function updateEvent(
   data: {
     title: string;
     description: string;
+    thumbnail_url?: string;
+    video_link?: string;
+    event_date?: string;
+    location?: string;
+    form_link?: string;
+    hero_data?: HeroData;
+    agenda_data?: AgendaItem[];
+    speaker_images?: string[];
+    detail_content?: string;
     banner_description?: string[];
     persons?: PersonDetail[];
   }
@@ -57,6 +129,15 @@ export async function updateEvent(
       .update({
         title: data.title,
         description: data.description,
+        thumbnail_url: data.thumbnail_url || null,
+        video_link: data.video_link || null,
+        event_date: data.event_date || null,
+        location: data.location || null,
+        form_link: data.form_link || null,
+        hero_data: data.hero_data || null,
+        agenda_data: data.agenda_data || null,
+        speaker_images: data.speaker_images || null,
+        detail_content: data.detail_content || null,
         banner_description: data.banner_description || null,
         Person: data.persons ? { data: data.persons } : null,
       })

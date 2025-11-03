@@ -206,7 +206,9 @@ const EventDetailHeader = ({
                   일정
                 </div>
                 <div className="text-lg font-poppins font-normal text-white">
-                  {eventDetail?.[0].Hero.date}
+                  {eventDetail?.[0]?.hero_data?.date ||
+                    eventDetail?.[0]?.event_date ||
+                    "-"}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
@@ -214,7 +216,9 @@ const EventDetailHeader = ({
                   장소
                 </div>
                 <div className="text-lg font-poppins font-normal text-white">
-                  {eventDetail?.[0].Hero.space}
+                  {eventDetail?.[0]?.hero_data?.location ||
+                    eventDetail?.[0]?.location ||
+                    "-"}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
@@ -222,7 +226,7 @@ const EventDetailHeader = ({
                   사전 신청 기간
                 </div>
                 <div className="text-lg font-poppins font-normal text-white">
-                  {eventDetail?.[0].Hero.pre}
+                  {eventDetail?.[0]?.hero_data?.pre || "-"}
                 </div>
               </div>
             </div>
@@ -447,18 +451,31 @@ export default function LandingPage() {
             <div className="flex flex-row gap-10">
               <div className="flex flex-col gap-10">
                 <div>
-                  <h1 className="text-xl font-montserrat font-bold tracking-tight text-black">
-                    {eventDetail?.[0].Hero.title[0]}
-                  </h1>
-                  <h1 className="text-xl font-montserrat font-bold tracking-tight text-black">
-                    {eventDetail?.[0].Hero.title[1]}
-                  </h1>
-                  <p className="mt-8 text-md font-poppins leading-relaxed text-gray-700">
-                    {eventDetail?.[0].Hero.description[0]}
-                  </p>
-                  <p className="mt-4 text-md font-poppins leading-relaxed text-gray-700">
-                    {eventDetail?.[0].Hero.description[1]}
-                  </p>
+                  {eventDetail?.[0]?.hero_data?.title?.[0] && (
+                    <h1 className="text-xl font-montserrat font-bold tracking-tight text-black">
+                      {eventDetail[0].hero_data.title[0]}
+                    </h1>
+                  )}
+                  {eventDetail?.[0]?.hero_data?.title?.[1] && (
+                    <h1 className="text-xl font-montserrat font-bold tracking-tight text-black">
+                      {eventDetail[0].hero_data.title[1]}
+                    </h1>
+                  )}
+                  {eventDetail?.[0]?.hero_data?.description?.[0] && (
+                    <p className="mt-8 text-md font-poppins leading-relaxed text-gray-700">
+                      {eventDetail[0].hero_data.description[0]}
+                    </p>
+                  )}
+                  {eventDetail?.[0]?.hero_data?.description?.[1] && (
+                    <p className="mt-4 text-md font-poppins leading-relaxed text-gray-700">
+                      {eventDetail[0].hero_data.description[1]}
+                    </p>
+                  )}
+                  {eventDetail?.[0]?.detail_content && (
+                    <p className="mt-4 text-md font-poppins leading-relaxed text-gray-700 whitespace-pre-wrap">
+                      {eventDetail[0].detail_content}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -487,7 +504,9 @@ export default function LandingPage() {
                   참석 대상
                 </span>
                 <span className="text-md font-poppins font-normal text-[#4B5563]">
-                  {renderWithNewlines(eventDetail?.[0].Hero.participant)}
+                  {renderWithNewlines(
+                    eventDetail?.[0]?.hero_data?.participant || "-"
+                  )}
                 </span>
               </div>
             </div>
@@ -646,18 +665,31 @@ export default function LandingPage() {
           <div className="flex flex-row gap-10">
             <div className="flex flex-col gap-10">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-black">
-                  {eventDetail?.[0].Hero.title[0]}
-                </h1>
-                <h1 className="text-2xl font-bold tracking-tight text-black">
-                  {eventDetail?.[0].Hero.title[1]}
-                </h1>
-                <p className="mt-8 text-lg leading-relaxed text-gray-700">
-                  {eventDetail?.[0].Hero.description[0]}
-                </p>
-                <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                  {eventDetail?.[0].Hero.description[1]}
-                </p>
+                {eventDetail?.[0]?.hero_data?.title?.[0] && (
+                  <h1 className="text-2xl font-bold tracking-tight text-black">
+                    {eventDetail[0].hero_data.title[0]}
+                  </h1>
+                )}
+                {eventDetail?.[0]?.hero_data?.title?.[1] && (
+                  <h1 className="text-2xl font-bold tracking-tight text-black">
+                    {eventDetail[0].hero_data.title[1]}
+                  </h1>
+                )}
+                {eventDetail?.[0]?.hero_data?.description?.[0] && (
+                  <p className="mt-8 text-lg leading-relaxed text-gray-700">
+                    {eventDetail[0].hero_data.description[0]}
+                  </p>
+                )}
+                {eventDetail?.[0]?.hero_data?.description?.[1] && (
+                  <p className="mt-4 text-lg leading-relaxed text-gray-700">
+                    {eventDetail[0].hero_data.description[1]}
+                  </p>
+                )}
+                {eventDetail?.[0]?.detail_content && (
+                  <p className="mt-4 text-lg leading-relaxed text-gray-700 whitespace-pre-wrap">
+                    {eventDetail[0].detail_content}
+                  </p>
+                )}
               </div>
             </div>
             <div
@@ -691,7 +723,9 @@ export default function LandingPage() {
                 참석 대상
               </span>
               <span className="text-lg font-normal text-[#4B5563]">
-                {renderWithNewlines(eventDetail?.[0].Hero.participant)}
+                {renderWithNewlines(
+                  eventDetail?.[0]?.hero_data?.participant || "-"
+                )}
               </span>
             </div>
           </div>

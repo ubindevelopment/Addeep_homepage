@@ -17,14 +17,22 @@ export default function SiteNav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [exp, setExp] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
 
-  const { isMobile, isTablet } = useResponsive();
+  const responsive = useResponsive();
+  // 첫 렌더링에서는 항상 데스크톱으로 (서버와 일치)
+  const isMobile = mounted ? responsive.isMobile : false;
+  const isTablet = mounted ? responsive.isTablet : false;
 
   const pathname = usePathname();
 
   const disabledNav = "";
 
-  const disableLogo = pathname.includes("/about-us/core-value");
+  const disableLogo = mounted && pathname.includes("/about-us/core-value");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // body scroll lock
   useEffect(() => {
@@ -45,6 +53,34 @@ export default function SiteNav() {
 
   if (disabledNav) {
     return null;
+  }
+
+  // 첫 렌더링에서는 데스크톱 버전만 렌더링 (Hydration 에러 방지)
+  if (!mounted) {
+    return (
+      <>
+        <header className="sticky top-0 left-0 bg-white bg-opacity-70 backdrop-blur-md flex items-center justify-end w-full h-[82px] p-16 text-[12px] leading-[16.08px] font-sans text-[#1c1e21] transition-transform duration-500 [transition-timing-function:cubic-bezier(0,0.61,0.28,0.92)]">
+          <div className="mx-auto flex h-14 w-full items-center justify-between px-6 md:px-10">
+            <button
+              type="button"
+              aria-label="메뉴 열기"
+              aria-expanded={false}
+              className="inline-flex items-center rounded-lg p-2 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+            >
+              <SiteNavHamburgerIcon className="h-12 w-14 text-gray-900" />
+            </button>
+            <div aria-hidden className="flex-1" />
+            <div className="cursor-pointer">
+              <img
+                src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
+                alt="logo"
+                className="h-14 w-16"
+              />
+            </div>
+          </div>
+        </header>
+      </>
+    );
   }
 
   if (isMobile || isTablet) {
@@ -110,6 +146,8 @@ export default function SiteNav() {
                                   href={link.href}
                                   external={link.external}
                                   onClick={() => setOpen(false)}
+                                  isMobile={isMobile}
+                                  isTablet={isTablet}
                                 >
                                   {link.label}
                                 </NavLinkBig>
@@ -183,15 +221,17 @@ export default function SiteNav() {
           </button>
 
           <div aria-hidden className="flex-1" />
-          {!disableLogo && (
-            <div className="cursor-pointer" onClick={() => router.push("/")}>
-              <img
-                src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
-                alt="logo"
-                className="h-14 w-16"
-              />
-            </div>
-          )}
+          <div
+            className="cursor-pointer"
+            onClick={() => router.push("/")}
+            style={{ visibility: disableLogo ? "hidden" : "visible" }}
+          >
+            <img
+              src={`${NEXT_PUBLIC_CDN_BASE}/images/AddeepLogo.png`}
+              alt="logo"
+              className="h-14 w-16"
+            />
+          </div>
         </div>
       </header>
 
@@ -238,6 +278,8 @@ export default function SiteNav() {
                               href={link.href}
                               external={link.external}
                               onClick={() => setOpen(false)}
+                              isMobile={isMobile}
+                              isTablet={isTablet}
                             >
                               {link.label}
                             </NavLinkBig>
@@ -299,14 +341,16 @@ function NavLinkBig({
   external,
   onClick,
   children,
+  isMobile,
+  isTablet,
 }: {
   href: string;
   external?: boolean;
   onClick?: () => void;
   children: React.ReactNode;
+  isMobile: boolean;
+  isTablet: boolean;
 }) {
-  const { isMobile, isTablet } = useResponsive();
-
   const mobileCls =
     "inline-block text-2xl leading-normal text-white hover:text-white/90 focus:outline-none";
 

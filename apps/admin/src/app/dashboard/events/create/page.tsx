@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { createEvent } from "../actions";
+import { createEvent, uploadEventImage } from "../actions";
 
 interface PersonDetail {
   en_name: string;
@@ -15,30 +15,62 @@ interface PersonDetail {
 
 export default function CreateEventPage() {
   const router = useRouter();
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    banner_description: [""],
-    persons: [
-      {
-        en_name: "",
-        title: "",
-        sub_title: "",
-        speaker: "",
-        desc: [""],
-      },
-    ] as PersonDetail[],
+    thumbnail_url: "",
+    video_link: "",
+    event_date: "",
+    location: "",
+    form_link: "",
+    detail_content: "",
+    banner_description: [""] as string[],
+    persons: [] as PersonDetail[],
   });
+
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const { mutate: createEventMutation, isPending } = useMutation({
-    mutationFn: (data: {
-      title: string;
-      description: string;
-      banner_description: string[];
-      persons: PersonDetail[];
-    }) => createEvent(data),
+    mutationFn: async (data: typeof formData) => {
+      let uploadedThumbnailUrl = data.thumbnail_url;
+
+      // 썸네일 업로드
+      if (thumbnailFile) {
+        setIsUploadingThumbnail(true);
+        try {
+          const result = await uploadEventImage(thumbnailFile);
+          uploadedThumbnailUrl = result.url;
+        } catch (error) {
+          console.error("썸네일 업로드 에러:", error);
+          alert("썸네일 업로드 중 오류가 발생했습니다.");
+          throw error;
+        } finally {
+          setIsUploadingThumbnail(false);
+        }
+      }
+
+      return createEvent({
+        title: data.title,
+        description: data.description,
+        thumbnail_url: uploadedThumbnailUrl || undefined,
+        video_link: data.video_link || undefined,
+        event_date: data.event_date || undefined,
+        location: data.location || undefined,
+        form_link: data.form_link || undefined,
+        detail_content: data.detail_content || undefined,
+        banner_description:
+          data.banner_description.filter((d) => d.trim()).length > 0
+            ? data.banner_description.filter((d) => d.trim())
+            : undefined,
+        persons: data.persons.length > 0 ? data.persons : undefined,
+      });
+    },
     onSuccess: () => {
       alert("이벤트가 성공적으로 생성되었습니다.");
       router.push("/dashboard");
@@ -59,26 +91,68 @@ export default function CreateEventPage() {
     }
   };
 
-  const handleBannerDescChange = (index: number, value: string) => {
-    const newBannerDesc = [...formData.banner_description];
-    newBannerDesc[index] = value;
-    setFormData((prev) => ({ ...prev, banner_description: newBannerDesc }));
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 체크 (10MB 제한)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("파일 크기는 10MB를 초과할 수 없습니다.");
+      return;
+    }
+
+    setThumbnailFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setThumbnailPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const addBannerDesc = () => {
+  const handleBannerDescriptionChange = (index: number, value: string) => {
+    const newBannerDescription = [...formData.banner_description];
+    newBannerDescription[index] = value;
+    setFormData((prev) => ({
+      ...prev,
+      banner_description: newBannerDescription,
+    }));
+  };
+
+  const addBannerDescription = () => {
     setFormData((prev) => ({
       ...prev,
       banner_description: [...prev.banner_description, ""],
     }));
   };
 
-  const removeBannerDesc = (index: number) => {
-    if (formData.banner_description.length > 1) {
-      const newBannerDesc = formData.banner_description.filter(
-        (_, i) => i !== index
-      );
-      setFormData((prev) => ({ ...prev, banner_description: newBannerDesc }));
-    }
+  const removeBannerDescription = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      banner_description: prev.banner_description.filter((_, i) => i !== index),
+    }));
+  };
+
+  const addPerson = () => {
+    setFormData((prev) => ({
+      ...prev,
+      persons: [
+        ...prev.persons,
+        {
+          en_name: "",
+          title: "",
+          sub_title: "",
+          speaker: "",
+          desc: [""],
+        },
+      ],
+    }));
+  };
+
+  const removePerson = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      persons: prev.persons.filter((_, i) => i !== index),
+    }));
   };
 
   const handlePersonChange = (
@@ -88,53 +162,11 @@ export default function CreateEventPage() {
   ) => {
     const newPersons = [...formData.persons];
     if (field === "desc") {
-      return;
+      newPersons[index][field] = [value];
+    } else {
+      newPersons[index][field] = value;
     }
-    newPersons[index] = { ...newPersons[index], [field]: value };
     setFormData((prev) => ({ ...prev, persons: newPersons }));
-  };
-
-  const handlePersonDescChange = (
-    personIndex: number,
-    descIndex: number,
-    value: string
-  ) => {
-    const newPersons = [...formData.persons];
-    newPersons[personIndex].desc[descIndex] = value;
-    setFormData((prev) => ({ ...prev, persons: newPersons }));
-  };
-
-  const addPersonDesc = (personIndex: number) => {
-    const newPersons = [...formData.persons];
-    newPersons[personIndex].desc.push("");
-    setFormData((prev) => ({ ...prev, persons: newPersons }));
-  };
-
-  const removePersonDesc = (personIndex: number, descIndex: number) => {
-    const newPersons = [...formData.persons];
-    if (newPersons[personIndex].desc.length > 1) {
-      newPersons[personIndex].desc = newPersons[personIndex].desc.filter(
-        (_, i) => i !== descIndex
-      );
-      setFormData((prev) => ({ ...prev, persons: newPersons }));
-    }
-  };
-
-  const addPerson = () => {
-    setFormData((prev) => ({
-      ...prev,
-      persons: [
-        ...prev.persons,
-        { en_name: "", title: "", sub_title: "", speaker: "", desc: [""] },
-      ],
-    }));
-  };
-
-  const removePerson = (index: number) => {
-    if (formData.persons.length > 1) {
-      const newPersons = formData.persons.filter((_, i) => i !== index);
-      setFormData((prev) => ({ ...prev, persons: newPersons }));
-    }
   };
 
   const validateForm = () => {
@@ -145,7 +177,7 @@ export default function CreateEventPage() {
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "내용을 입력해주세요.";
+      newErrors.description = "설명을 입력해주세요.";
     }
 
     setErrors(newErrors);
@@ -159,18 +191,7 @@ export default function CreateEventPage() {
       return;
     }
 
-    const submitData = {
-      ...formData,
-      banner_description: formData.banner_description.filter((desc) =>
-        desc.trim()
-      ),
-      persons: formData.persons.map((person) => ({
-        ...person,
-        desc: person.desc.filter((d) => d.trim()),
-      })),
-    };
-
-    createEventMutation(submitData);
+    createEventMutation(formData);
   };
 
   const handleCancel = () => {
@@ -179,468 +200,347 @@ export default function CreateEventPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-50 via-primary-50/30 to-dark-50 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto animate-fade-in">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={handleCancel}
-            className="inline-flex items-center gap-2 px-4 py-2 text-dark-600 hover:text-dark-900 font-medium transition-colors mb-4"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            뒤로 가기
-          </button>
-
-          <div className="bg-white rounded-2xl p-6 shadow-medium border border-dark-100">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-dark-900">
-                  이벤트 만들기
-                </h1>
-                <p className="text-dark-600 text-sm mt-1">
-                  새로운 이벤트를 작성합니다
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info */}
-          <div className="bg-white rounded-2xl p-8 shadow-medium border border-dark-100">
-            <h2 className="text-xl font-bold text-dark-900 mb-6 flex items-center gap-2">
-              <svg
-                className="w-6 h-6 text-orange-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              기본 정보
-            </h2>
-            <div className="space-y-6">
-              {/* Title */}
-              <div>
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-semibold text-dark-900 mb-2"
-                >
-                  제목 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="이벤트 제목을 입력하세요"
-                  className={`w-full px-4 py-3 border rounded-xl text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                    errors.title
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-dark-200 focus:ring-primary-500 focus:border-primary-500"
-                  }`}
-                />
-                {errors.title && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                    <svg
-                      className="w-4 h-4"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.title}
-                  </p>
-                )}
-              </div>
-
-              {/* Description */}
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-semibold text-dark-900 mb-2"
-                >
-                  내용 <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="이벤트 내용을 입력하세요"
-                  rows={6}
-                  className={`w-full px-4 py-3 border rounded-xl text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 transition-all duration-200 resize-none ${
-                    errors.description
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-dark-200 focus:ring-primary-500 focus:border-primary-500"
-                  }`}
-                />
-                {errors.description && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                    <svg
-                      className="w-4 h-4"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.description}
-                  </p>
-                )}
-              </div>
-            </div>
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6">
+            <h1 className="text-3xl font-bold text-white">이벤트 생성</h1>
+            <p className="text-primary-100 mt-2">새로운 이벤트를 등록합니다.</p>
           </div>
 
-          {/* Banner Description */}
-          <div className="bg-white rounded-2xl p-8 shadow-medium border border-dark-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-dark-900 flex items-center gap-2">
-                <svg
-                  className="w-6 h-6 text-primary-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                  />
-                </svg>
-                배너 설명
+          <form onSubmit={handleSubmit} className="p-8 space-y-8">
+            {/* 기본 정보 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                📝 기본 정보 (필수)
               </h2>
-              <button
-                type="button"
-                onClick={addBannerDesc}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-lg font-medium hover:bg-primary-200 transition-colors"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                항목 추가
-              </button>
-            </div>
-            <div className="space-y-3">
-              {formData.banner_description.map((desc, index) => (
-                <div key={index} className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-10 flex items-center justify-center bg-primary-100 text-primary-700 rounded-lg font-semibold">
-                    {index + 1}
-                  </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    제목 <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    value={desc}
-                    onChange={(e) =>
-                      handleBannerDescChange(index, e.target.value)
-                    }
-                    placeholder={`배너 설명 ${index + 1}`}
-                    className="flex-1 px-4 py-2 border border-dark-200 rounded-lg text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-lg border ${
+                      errors.title ? "border-red-500" : "border-gray-300"
+                    } focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
+                    placeholder="이벤트 제목"
                   />
-                  {formData.banner_description.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeBannerDesc(index)}
-                      className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
+                  {errors.title && (
+                    <p className="mt-2 text-sm text-red-600">{errors.title}</p>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Person Details */}
-          <div className="bg-white rounded-2xl p-8 shadow-medium border border-dark-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-dark-900 flex items-center gap-2">
-                <svg
-                  className="w-6 h-6 text-secondary-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    설명 <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={3}
+                    className={`w-full px-4 py-3 rounded-lg border ${
+                      errors.description ? "border-red-500" : "border-gray-300"
+                    } focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
+                    placeholder="이벤트 설명"
                   />
-                </svg>
-                주요 참석자 정보
+                  {errors.description && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {errors.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* 썸네일 이미지 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                📸 썸네일 이미지 (선택)
               </h2>
-              <button
-                type="button"
-                onClick={addPerson}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-100 text-secondary-700 rounded-lg font-medium hover:bg-secondary-200 transition-colors"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                참석자 추가
-              </button>
-            </div>
-            <div className="space-y-6">
-              {formData.persons.map((person, personIndex) => (
-                <div
-                  key={personIndex}
-                  className="p-6 bg-gradient-to-br from-secondary-50 to-white rounded-xl border border-secondary-200"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-dark-900">
-                      참석자 {personIndex + 1}
-                    </h3>
-                    {formData.persons.length > 1 && (
+
+              <div>
+                <input
+                  type="file"
+                  ref={thumbnailInputRef}
+                  onChange={handleThumbnailChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <div className="flex items-start gap-4">
+                  <button
+                    type="button"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+                  >
+                    이미지 선택
+                  </button>
+                  {thumbnailPreview && (
+                    <div className="flex-1">
+                      <img
+                        src={thumbnailPreview}
+                        alt="Thumbnail Preview"
+                        className="w-48 h-48 object-cover rounded-lg border"
+                      />
                       <button
                         type="button"
-                        onClick={() => removePerson(personIndex)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        onClick={() => {
+                          setThumbnailFile(null);
+                          setThumbnailPreview("");
+                        }}
+                        className="mt-2 text-sm text-red-600 hover:text-red-700"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
+                        제거
                       </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-dark-900 mb-2">
-                          이름 (영문)
-                        </label>
-                        <input
-                          type="text"
-                          value={person.en_name}
-                          onChange={(e) =>
-                            handlePersonChange(
-                              personIndex,
-                              "en_name",
-                              e.target.value
-                            )
-                          }
-                          placeholder="John Doe"
-                          className="w-full px-4 py-2 border border-dark-200 rounded-lg text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all duration-200"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-dark-900 mb-2">
-                          직책
-                        </label>
-                        <input
-                          type="text"
-                          value={person.title}
-                          onChange={(e) =>
-                            handlePersonChange(
-                              personIndex,
-                              "title",
-                              e.target.value
-                            )
-                          }
-                          placeholder="CEO"
-                          className="w-full px-4 py-2 border border-dark-200 rounded-lg text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all duration-200"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-dark-900 mb-2">
-                          부제목
-                        </label>
-                        <input
-                          type="text"
-                          value={person.sub_title}
-                          onChange={(e) =>
-                            handlePersonChange(
-                              personIndex,
-                              "sub_title",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Company Name"
-                          className="w-full px-4 py-2 border border-dark-200 rounded-lg text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all duration-200"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-dark-900 mb-2">
-                          연사
-                        </label>
-                        <input
-                          type="text"
-                          value={person.speaker}
-                          onChange={(e) =>
-                            handlePersonChange(
-                              personIndex,
-                              "speaker",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Keynote Speaker"
-                          className="w-full px-4 py-2 border border-dark-200 rounded-lg text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all duration-200"
-                        />
-                      </div>
                     </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <label className="block text-sm font-semibold text-dark-900">
-                          설명
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => addPersonDesc(personIndex)}
-                          className="text-sm text-secondary-600 hover:text-secondary-700 font-medium"
-                        >
-                          + 항목 추가
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {person.desc.map((desc, descIndex) => (
-                          <div key={descIndex} className="flex gap-2">
-                            <input
-                              type="text"
-                              value={desc}
-                              onChange={(e) =>
-                                handlePersonDescChange(
-                                  personIndex,
-                                  descIndex,
-                                  e.target.value
-                                )
-                              }
-                              placeholder={`설명 ${descIndex + 1}`}
-                              className="flex-1 px-4 py-2 border border-dark-200 rounded-lg text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all duration-200"
-                            />
-                            {person.desc.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removePersonDesc(personIndex, descIndex)
-                                }
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  지원 형식: JPG, PNG, WEBP (최대 10MB)
+                </p>
+              </div>
+            </section>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-6 py-3 bg-white border border-dark-200 text-dark-700 rounded-xl font-semibold hover:bg-dark-50 transition-all duration-200 shadow-soft"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-orange-600 transition-all duration-200 shadow-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPending ? "생성 중..." : "생성하기"}
-            </button>
-          </div>
-        </form>
+            {/* 영상 및 링크 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                🎥 영상 및 링크 (선택)
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    영상 링크 URL
+                  </label>
+                  <input
+                    type="url"
+                    name="video_link"
+                    value={formData.video_link}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="https://youtube.com/..."
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    영상 링크가 있으면 "영상 바로보기" 버튼이 표시됩니다
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    신청서 링크 URL
+                  </label>
+                  <input
+                    type="url"
+                    name="form_link"
+                    value={formData.form_link}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="https://forms.gle/..."
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* 이벤트 정보 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                📅 이벤트 정보 (선택)
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    이벤트 날짜
+                  </label>
+                  <input
+                    type="date"
+                    name="event_date"
+                    value={formData.event_date}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    장소
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="강남구 테헤란로 123"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* 상세 내용 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                📄 상세 내용 (선택)
+              </h2>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  상세 설명
+                </label>
+                <textarea
+                  name="detail_content"
+                  value={formData.detail_content}
+                  onChange={handleChange}
+                  rows={6}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="이벤트에 대한 상세한 설명을 입력하세요..."
+                />
+              </div>
+            </section>
+
+            {/* 배너 설명 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                📢 배너 설명 (선택)
+              </h2>
+
+              <div className="space-y-3">
+                {formData.banner_description.map((desc, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={desc}
+                      onChange={(e) =>
+                        handleBannerDescriptionChange(index, e.target.value)
+                      }
+                      className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder={`배너 설명 ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeBannerDescription(index)}
+                      className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      제거
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addBannerDescription}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  + 배너 설명 추가
+                </button>
+              </div>
+            </section>
+
+            {/* 스피커 정보 */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
+                👥 스피커 정보 (선택)
+              </h2>
+
+              <div className="space-y-6">
+                {formData.persons.map((person, index) => (
+                  <div
+                    key={index}
+                    className="p-4 border border-gray-200 rounded-lg bg-gray-50"
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-semibold text-gray-700">
+                        스피커 {index + 1}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => removePerson(index)}
+                        className="text-sm text-red-600 hover:text-red-700"
+                      >
+                        제거
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={person.en_name}
+                        onChange={(e) =>
+                          handlePersonChange(index, "en_name", e.target.value)
+                        }
+                        className="px-3 py-2 rounded border border-gray-300"
+                        placeholder="영문 이름"
+                      />
+                      <input
+                        type="text"
+                        value={person.title}
+                        onChange={(e) =>
+                          handlePersonChange(index, "title", e.target.value)
+                        }
+                        className="px-3 py-2 rounded border border-gray-300"
+                        placeholder="직함"
+                      />
+                      <input
+                        type="text"
+                        value={person.sub_title}
+                        onChange={(e) =>
+                          handlePersonChange(index, "sub_title", e.target.value)
+                        }
+                        className="px-3 py-2 rounded border border-gray-300"
+                        placeholder="부제목"
+                      />
+                      <input
+                        type="text"
+                        value={person.speaker}
+                        onChange={(e) =>
+                          handlePersonChange(index, "speaker", e.target.value)
+                        }
+                        className="px-3 py-2 rounded border border-gray-300"
+                        placeholder="스피커명"
+                      />
+                      <textarea
+                        value={person.desc[0] || ""}
+                        onChange={(e) =>
+                          handlePersonChange(index, "desc", e.target.value)
+                        }
+                        className="md:col-span-2 px-3 py-2 rounded border border-gray-300"
+                        placeholder="설명"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addPerson}
+                  className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+                >
+                  + 스피커 추가
+                </button>
+              </div>
+            </section>
+
+            {/* 버튼 */}
+            <div className="flex gap-4 pt-6">
+              <button
+                type="submit"
+                disabled={isPending || isUploadingThumbnail}
+                className="flex-1 bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-primary-700 hover:to-primary-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPending || isUploadingThumbnail ? "생성 중..." : "생성하기"}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

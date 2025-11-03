@@ -21,6 +21,8 @@ type NoticeItem = {
   href?: string; // 상세 페이지 링크 (옵션)
   day?: string;
   video_link?: string;
+  thumbnail_url?: string;
+  speaker_images?: string[];
 };
 
 function formatKoreanDate(input: string) {
@@ -72,7 +74,7 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
 
   if (isMobile || isMobileTablet || isTablet || isTabletDesktop) {
     return (
-      <section className="w-full flex flex-col items-center justify-center mb-8">
+      <section className="w-full flex flex-col mb-8">
         {title ? (
           <h2 className="mb-6 text-3xl font-bold text-neutral-900 md:text-4xl">
             {title}
@@ -96,10 +98,14 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                   onClick={() => handleMoveToEventDetail(it)}
                 >
                   <div className="flex flex-col">
-                    <EventSpeakerSlider
-                      onClick={(e) => e.stopPropagation()}
-                      uuid={it.id as unknown as number}
-                    />
+                    {(it.speaker_images || it.thumbnail_url) && (
+                      <EventSpeakerSlider
+                        onClick={(e) => e.stopPropagation()}
+                        uuid={it.id as unknown as number}
+                        images={it.speaker_images}
+                        thumbnailUrl={it.thumbnail_url}
+                      />
+                    )}
                     <div className="p-8">
                       <h3 className="text-xl font-extrabold text-neutral-900">
                         {it.title}
@@ -111,16 +117,18 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                           {formatKoreanDate(it.created_at)} {it.day}
                         </time>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(it.video_link, "_blank");
-                        }}
-                        type="submit"
-                        className="w-full mt-8 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      >
-                        영상 바로보기
-                      </button>
+                      {it.video_link && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(it.video_link, "_blank");
+                          }}
+                          type="button"
+                          className="w-full mt-8 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          영상 바로보기
+                        </button>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -145,7 +153,6 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
         {items.map((it) => {
           const Card = it.href ? "a" : "div";
           const props = it.href ? { href: it.href } : {};
-          console.log(it);
           return (
             <li key={it.id}>
               <Card
@@ -162,10 +169,14 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                 onClick={() => handleMoveToEventDetail(it)}
               >
                 <div className="flex flex-row">
-                  <EventSpeakerSlider
-                    onClick={(e) => e.stopPropagation()}
-                    uuid={it.id as unknown as number}
-                  />
+                  {(it.speaker_images || it.thumbnail_url) && (
+                    <EventSpeakerSlider
+                      onClick={(e) => e.stopPropagation()}
+                      uuid={it.id as unknown as number}
+                      images={it.speaker_images}
+                      thumbnailUrl={it.thumbnail_url}
+                    />
+                  )}
                   <div className="p-8">
                     <h3 className="text-xl font-extrabold text-neutral-900">
                       {it.title}
@@ -177,16 +188,18 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                         {formatKoreanDate(it.created_at)} {it.day}
                       </time>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(it.video_link, "_blank");
-                      }}
-                      type="submit"
-                      className="w-full mt-8 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      영상 바로보기
-                    </button>
+                    {it.video_link && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(it.video_link, "_blank");
+                        }}
+                        type="button"
+                        className="w-full mt-8 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        영상 바로보기
+                      </button>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -246,8 +259,8 @@ function EventContent() {
 
   const NoticeListSectionClassname =
     isMobile || isTablet
-      ? "flex flex-col items-center justify-center flex-1 p-2"
-      : "flex flex-col items-center justify-center flex-1 w-3/4 p-24";
+      ? "flex flex-col flex-1 p-2"
+      : "flex flex-col flex-1 w-3/4 p-24";
 
   if (isLoading) {
     return (
