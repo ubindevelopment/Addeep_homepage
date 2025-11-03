@@ -8,12 +8,12 @@ import CustomTable from "../components/custom-table";
 import { Announcement } from "../store/interface/announcement";
 import { Event } from "../store/interface/event";
 import { News } from "../store/interface/news";
-import { Article } from "../store/interface/article";
+import { IRMaterial } from "../store/interface/ir-material";
 import { tableConfig } from "../store/commonConfig";
 import { toggleMaintenanceMode } from "./maintenance-actions";
 
-type TableType = "announcement" | "events" | "news" | "article";
-type DataType = Announcement | Event | News | Article;
+type TableType = "announcement" | "events" | "news" | "ir_materials";
+type DataType = Announcement | Event | News | IRMaterial;
 
 function DashboardContent() {
   const router = useRouter();
@@ -238,8 +238,8 @@ function DashboardContent() {
       ),
     },
     {
-      key: "article",
-      label: "아티클",
+      key: "ir_materials",
+      label: "IR 자료",
       icon: (
         <svg
           className="w-4 h-4"
