@@ -12,10 +12,13 @@ import Link from "next/link";
 interface PressMediaItem {
   id: string;
   title: string;
-  description: string;
   content: string;
+  image_url?: string;
+  published_date: string;
+  is_featured: boolean;
+  display_order: number;
   created_at: string;
-  thumbnail_url?: string;
+  updated_at: string;
 }
 
 interface PressMediaHeaderProps {
@@ -43,14 +46,12 @@ interface FeaturedCardProps {
 
 function FeaturedCard({ item, isMobile }: FeaturedCardProps) {
   return (
-    <Link href={`/announcement/${item.id}`}>
+    <Link href={`/press-media/${item.id}`}>
       <div className="flex flex-col md:flex-row gap-8 md:gap-12 mb-16 md:mb-24 cursor-pointer group">
         {/* 이미지 */}
         <div className="w-full md:w-1/2 rounded-2xl overflow-hidden">
           <img
-            src={
-              item.thumbnail_url || `${NEXT_PUBLIC_CDN_BASE}/images/event-1.png`
-            }
+            src={item.image_url || `${NEXT_PUBLIC_CDN_BASE}/images/event-1.png`}
             alt={item.title}
             className="w-full h-64 md:h-96 object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -62,9 +63,9 @@ function FeaturedCard({ item, isMobile }: FeaturedCardProps) {
             {item.title}
           </h2>
           <p className="text-gray-600 text-sm md:text-base leading-relaxed mb-6 line-clamp-4">
-            {item.description.length > 100
-              ? `${item.description.slice(0, 100)}...`
-              : item.description}
+            {item.content.length > 100
+              ? `${item.content.slice(0, 100)}...`
+              : item.content}
           </p>
           <div className="flex items-center justify-between">
             <button
@@ -89,7 +90,7 @@ function FeaturedCard({ item, isMobile }: FeaturedCardProps) {
               </svg>
             </button>
             <time className="text-sm text-gray-500">
-              {formatKoreanDate(item.created_at)}
+              {formatKoreanDate(item.published_date)}
             </time>
           </div>
         </div>
@@ -104,14 +105,12 @@ interface GridCardProps {
 
 function GridCard({ item }: GridCardProps) {
   return (
-    <Link href={`/announcement/${item.id}`}>
+    <Link href={`/press-media/${item.id}`}>
       <div className="flex flex-col cursor-pointer group">
         {/* 이미지 */}
         <div className="w-full rounded-2xl overflow-hidden mb-6">
           <img
-            src={
-              item.thumbnail_url || `${NEXT_PUBLIC_CDN_BASE}/images/event-1.png`
-            }
+            src={item.image_url || `${NEXT_PUBLIC_CDN_BASE}/images/event-1.png`}
             alt={item.title}
             className="w-full h-56 md:h-64 object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -119,7 +118,7 @@ function GridCard({ item }: GridCardProps) {
 
         {/* 날짜 */}
         <time className="text-sm text-gray-500 mb-3">
-          {formatKoreanDate(item.created_at)}
+          {formatKoreanDate(item.published_date)}
         </time>
 
         {/* 제목 */}
@@ -129,9 +128,9 @@ function GridCard({ item }: GridCardProps) {
 
         {/* 설명 */}
         <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-          {item.description.length > 100
-            ? `${item.description.slice(0, 100)}...`
-            : item.description}
+          {item.content.length > 100
+            ? `${item.content.slice(0, 100)}...`
+            : item.content}
         </p>
 
         {/* 링크 */}
@@ -253,9 +252,9 @@ function PressMediaContent() {
   const getPressMediaData = async () => {
     try {
       const { data, count, error } = await supabase
-        .from("announcement")
+        .from("press_media")
         .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
+        .order("published_date", { ascending: false })
         .range(
           pagination.pageIndex * pagination.pageSize,
           pagination.pageIndex * pagination.pageSize + (pagination.pageSize - 1)
@@ -268,17 +267,17 @@ function PressMediaContent() {
 
       return { data, count };
     } catch (err) {
-      console.error("getAnnouncementData 에러:", err);
+      console.error("getPressMediaData 에러:", err);
       throw err;
     }
   };
 
   const {
-    data: announcementList,
+    data: pressMediaList,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["announcement", pagination.pageIndex, pagination.pageSize],
+    queryKey: ["press_media", pagination.pageIndex, pagination.pageSize],
     queryFn: () => getPressMediaData(),
     retry: 0,
     refetchOnMount: false,
@@ -288,7 +287,7 @@ function PressMediaContent() {
 
   function handlePageChange(newPage: number) {
     setPagination({ ...pagination, pageIndex: newPage });
-    router.push(`/announcement?page=${newPage}`);
+    router.push(`/press-media?page=${newPage}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -310,8 +309,8 @@ function PressMediaContent() {
     );
   }
 
-  const items = announcementList?.data || [];
-  const totalCount = announcementList?.count || 0;
+  const items = pressMediaList?.data || [];
+  const totalCount = pressMediaList?.count || 0;
   const totalPages = Math.ceil(totalCount / pagination.pageSize);
 
   const featuredItem = items[0];

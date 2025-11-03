@@ -11,14 +11,28 @@ export default function AdminPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    setError("");
+
+    if (!email || !password) {
+      setError("이메일과 비밀번호를 입력해주세요.");
+      return;
+    }
+
     try {
       await signIn({ email, password });
       router.push("/dashboard");
-    } catch (error) {
-      alert("로그인 실패");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      const errorMessage =
+        error?.message ||
+        "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.";
+      setError(errorMessage);
     }
   };
 
@@ -61,7 +75,28 @@ export default function AdminPage() {
           </div>
 
           {/* Form */}
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit} method="post">
+            {error && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+                <div className="flex items-center">
+                  <svg
+                    className="h-5 w-5 text-red-500 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-sm font-medium text-red-800">{error}</p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label
                 htmlFor="email"
