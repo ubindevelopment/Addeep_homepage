@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { CalendarIcon } from "../../../constants/announcement";
 import { formatKoreanDate } from "../../../shared/utils";
 import { useResponsive } from "../../../lib/useResponsive";
@@ -11,6 +12,19 @@ import { NEXT_PUBLIC_CDN_BASE } from "../../../lib/env";
 
 interface AnnouncementHeaderProps {
   isMobile?: boolean;
+}
+
+interface AnnouncementItem {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  thumbnail_url?: string;
+}
+
+interface NoticeListProps {
+  items: AnnouncementItem[];
+  title?: string;
 }
 
 function AnnouncementHeader({ isMobile }: AnnouncementHeaderProps) {
@@ -52,18 +66,17 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
           </div>
         )}
         {items.map((it) => {
-          const Card = it.href ? "a" : "div";
-          const props = it.href ? { href: it.href } : {};
           return (
             <li key={it.id}>
-              <Card
-                {...props}
+              <Link
+                href={`/announcement/${it.id}`}
                 className="
                   block rounded-3xl bg-white
                   border border-neutral-100 shadow-[0_1px_0_rgba(0,0,0,0.02)]
                   transition
                   hover:shadow-md hover:-translate-y-0.5
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300
+                  cursor-pointer
                 "
               >
                 <div className="p-8">
@@ -78,7 +91,7 @@ function NoticeList({ items, title = "" }: NoticeListProps) {
                     </time>
                   </div>
                 </div>
-              </Card>
+              </Link>
             </li>
           );
         })}
@@ -113,13 +126,7 @@ function AnnouncementContent() {
         throw error;
       }
 
-      // Add href to each announcement item
-      const dataWithHref = data?.map((item) => ({
-        ...item,
-        href: `/announcement/${item.id}`,
-      }));
-
-      return { data: dataWithHref, count };
+      return { data, count };
     } catch (err) {
       console.error("getAnnouncementData 에러:", err);
       throw err;
