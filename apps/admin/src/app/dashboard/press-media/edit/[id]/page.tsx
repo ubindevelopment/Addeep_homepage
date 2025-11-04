@@ -77,9 +77,14 @@ export default function EditPressMediaPage() {
       is_featured?: boolean;
       display_order?: number;
     }) => updatePressMedia(id, data),
-    onSuccess: () => {
-      alert("보도자료가 성공적으로 수정되었습니다.");
-      router.push(`/dashboard/press-media/${id}`);
+    onSuccess: (result) => {
+      if (result.success) {
+        alert("보도자료가 성공적으로 수정되었습니다.");
+        router.push(`/dashboard/press-media/${id}`);
+      } else {
+        console.error("updatePressMedia 에러:", result.error);
+        alert(result.error || "보도자료 수정 중 오류가 발생했습니다.");
+      }
     },
     onError: (error) => {
       console.error("updatePressMedia 에러:", error);

@@ -7,9 +7,6 @@ export async function createPressMedia(data: {
   content: string;
   image_url?: string;
   file_url?: string;
-  file_name?: string;
-  file_type?: string;
-  file_size?: number;
   published_date: string;
   is_featured?: boolean;
   display_order?: number;
@@ -23,9 +20,6 @@ export async function createPressMedia(data: {
           content: data.content,
           image_url: data.image_url || null,
           file_url: data.file_url || null,
-          file_name: data.file_name || null,
-          file_type: data.file_type || null,
-          file_size: data.file_size || null,
           published_date: data.published_date,
           is_featured: data.is_featured || false,
           display_order: data.display_order || 0,
@@ -36,13 +30,22 @@ export async function createPressMedia(data: {
 
     if (error) {
       console.error("Supabase 에러:", error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || "보도자료 생성 중 오류가 발생했습니다.",
+      };
     }
 
     return { success: true, data: result };
   } catch (err) {
     console.error("createPressMedia 에러:", err);
-    throw err;
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "보도자료 생성 중 오류가 발생했습니다.",
+    };
   }
 }
 
@@ -53,9 +56,6 @@ export async function updatePressMedia(
     content: string;
     image_url?: string;
     file_url?: string;
-    file_name?: string;
-    file_type?: string;
-    file_size?: number;
     published_date: string;
     is_featured?: boolean;
     display_order?: number;
@@ -69,9 +69,6 @@ export async function updatePressMedia(
         content: data.content,
         image_url: data.image_url || null,
         file_url: data.file_url || null,
-        file_name: data.file_name || null,
-        file_type: data.file_type || null,
-        file_size: data.file_size || null,
         published_date: data.published_date,
         is_featured: data.is_featured || false,
         display_order: data.display_order || 0,
@@ -82,13 +79,22 @@ export async function updatePressMedia(
 
     if (error) {
       console.error("Supabase 에러:", error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || "보도자료 수정 중 오류가 발생했습니다.",
+      };
     }
 
     return { success: true, data: result };
   } catch (err) {
     console.error("updatePressMedia 에러:", err);
-    throw err;
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "보도자료 수정 중 오류가 발생했습니다.",
+    };
   }
 }
 
@@ -101,13 +107,22 @@ export async function deletePressMedia(id: string) {
 
     if (error) {
       console.error("Supabase 에러:", error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || "보도자료 삭제 중 오류가 발생했습니다.",
+      };
     }
 
     return { success: true, data };
   } catch (err) {
     console.error("deletePressMedia 에러:", err);
-    throw err;
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "보도자료 삭제 중 오류가 발생했습니다.",
+    };
   }
 }
 
@@ -123,7 +138,10 @@ export async function uploadPressFile(file: File) {
 
     if (error) {
       console.error("파일 업로드 에러:", error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || "파일 업로드 중 오류가 발생했습니다.",
+      };
     }
 
     const {
@@ -139,6 +157,12 @@ export async function uploadPressFile(file: File) {
     };
   } catch (err) {
     console.error("uploadPressFile 에러:", err);
-    throw err;
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "파일 업로드 중 오류가 발생했습니다.",
+    };
   }
 }

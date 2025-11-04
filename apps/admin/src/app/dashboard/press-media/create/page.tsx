@@ -21,9 +21,6 @@ export default function CreatePressMediaPage() {
   const [fileData, setFileData] = useState<{
     file?: File;
     file_url?: string;
-    file_name?: string;
-    file_type?: string;
-    file_size?: number;
   }>({});
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -35,16 +32,18 @@ export default function CreatePressMediaPage() {
       content: string;
       image_url?: string;
       file_url?: string;
-      file_name?: string;
-      file_type?: string;
-      file_size?: number;
       published_date: string;
       is_featured?: boolean;
       display_order?: number;
     }) => createPressMedia(data),
-    onSuccess: () => {
-      alert("보도자료가 성공적으로 생성되었습니다.");
-      router.push("/dashboard");
+    onSuccess: (result) => {
+      if (result.success) {
+        alert("보도자료가 성공적으로 생성되었습니다.");
+        router.push("/dashboard");
+      } else {
+        console.error("createPressMedia 에러:", result.error);
+        alert(result.error || "보도자료 생성 중 오류가 발생했습니다.");
+      }
     },
     onError: (error) => {
       console.error("createPressMedia 에러:", error);
@@ -80,15 +79,18 @@ export default function CreatePressMediaPage() {
     setIsUploading(true);
     try {
       const result = await uploadPressFile(file);
-      setFileData({
-        file,
-        file_url: result.file_url,
-        file_name: result.file_name,
-        file_type: result.file_type,
-        file_size: result.file_size,
-      });
-      if (errors.file) {
-        setErrors((prev) => ({ ...prev, file: "" }));
+
+      if (result.success) {
+        setFileData({
+          file,
+          file_url: result.file_url,
+        });
+        if (errors.file) {
+          setErrors((prev) => ({ ...prev, file: "" }));
+        }
+      } else {
+        console.error("파일 업로드 에러:", result.error);
+        alert(result.error || "파일 업로드 중 오류가 발생했습니다.");
       }
     } catch (error) {
       console.error("파일 업로드 에러:", error);
@@ -96,13 +98,6 @@ export default function CreatePressMediaPage() {
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return "";
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
   };
 
   const validateForm = () => {
@@ -407,13 +402,13 @@ export default function CreatePressMediaPage() {
                   >
                     {isUploading ? "업로드 중..." : "파일 선택"}
                   </button>
-                  {fileData.file_name && (
+                  {fileData.file?.name && (
                     <div className="flex-1">
                       <p className="text-sm text-dark-700 font-medium">
-                        {fileData.file_name}
+                        {fileData.file.name}
                       </p>
                       <p className="text-xs text-dark-500">
-                        {formatFileSize(fileData.file_size)}
+                        {(fileData.file.size / (1024 * 1024)).toFixed(2)} MB
                       </p>
                     </div>
                   )}

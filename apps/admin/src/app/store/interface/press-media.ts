@@ -3,6 +3,7 @@ export interface PressMedia {
   title: string;
   content: string;
   image_url?: string;
+  file_url?: string;
   published_date: string;
   is_featured: boolean;
   display_order: number;
