@@ -77,7 +77,7 @@ export const footerLinks: FooterLink[] = [
   {
     id: "7",
     text: "IR Library",
-    href: "/article",
+    href: "/ir-library",
   },
   { id: "8", text: "Event", href: "/events" },
 ];
