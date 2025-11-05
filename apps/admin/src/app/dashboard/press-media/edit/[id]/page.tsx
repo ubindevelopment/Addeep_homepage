@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "../../../../../../lib/supabase";
 import { PressMedia } from "../../../../store/interface/press-media";
-import { updatePressMedia } from "../../actions";
+import { updatePressMedia, uploadPressImage } from "../../actions";
 
 export default function EditPressMediaPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -21,7 +22,13 @@ export default function EditPressMediaPage() {
     display_order: 0,
   });
 
+  const [imageFileData, setImageFileData] = useState<{
+    file?: File;
+    image_url?: string;
+  }>({});
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const getPressMediaData = async () => {
     try {
@@ -107,6 +114,57 @@ export default function EditPressMediaPage() {
     }
   };
 
+  const handleImageFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const result = await uploadPressImage(file);
+
+      if (result.success) {
+        setImageFileData({
+          file,
+          image_url: result.image_url,
+        });
+        // URL 입력 필드 비우기 (파일 업로드가 우선)
+        setFormData((prev) => ({ ...prev, image_url: "" }));
+        if (errors.image) {
+          setErrors((prev) => ({ ...prev, image: "" }));
+        }
+      } else {
+        console.error("이미지 업로드 에러:", result.error);
+        alert(result.error || "이미지 업로드 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("이미지 업로드 에러:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, image_url: value }));
+    // URL 입력 시 이미지 파일 데이터 클리어
+    if (value && imageFileData.image_url) {
+      setImageFileData({});
+    }
+    if (errors.image_url) {
+      setErrors((prev) => ({ ...prev, image_url: "" }));
+    }
+  };
+
+  const handleRemoveImageFile = () => {
+    setImageFileData({});
+    if (imageFileInputRef.current) {
+      imageFileInputRef.current.value = "";
+    }
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -133,7 +191,14 @@ export default function EditPressMediaPage() {
       return;
     }
 
-    updatePressMediaMutation(formData);
+    // 이미지 URL 결정: 파일 업로드가 우선, 없으면 URL 입력값 사용
+    const finalImageUrl =
+      imageFileData.image_url || formData.image_url || undefined;
+
+    updatePressMediaMutation({
+      ...formData,
+      image_url: finalImageUrl,
+    });
   };
 
   const handleCancel = () => {
@@ -373,44 +438,129 @@ export default function EditPressMediaPage() {
                 )}
               </div>
 
-              {/* Image URL Field */}
-              <div>
-                <label
-                  htmlFor="image_url"
-                  className="block text-sm font-semibold text-dark-900 mb-2"
-                >
-                  이미지 URL
+              {/* Image Section */}
+              <div className="space-y-4">
+                <label className="block text-sm font-semibold text-dark-900">
+                  이미지
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-dark-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+
+                {/* Image File Upload */}
+                <div>
+                  <label className="block text-xs font-medium text-dark-700 mb-2">
+                    파일 업로드
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      ref={imageFileInputRef}
+                      onChange={handleImageFileChange}
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => imageFileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="px-6 py-3 bg-primary-100 hover:bg-primary-200 text-primary-700 font-medium rounded-lg transition-colors disabled:opacity-50"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
+                      {isUploadingImage ? "업로드 중..." : "이미지 선택"}
+                    </button>
+                    {imageFileData.file?.name && (
+                      <div className="flex-1 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-dark-700 font-medium">
+                            {imageFileData.file.name}
+                          </p>
+                          <p className="text-xs text-dark-500">
+                            {(imageFileData.file.size / (1024 * 1024)).toFixed(
+                              2
+                            )}{" "}
+                            MB
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImageFile}
+                          className="p-2 text-dark-500 hover:text-red-600 transition-colors"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <input
-                    type="text"
-                    id="image_url"
-                    name="image_url"
-                    value={formData.image_url}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full pl-12 pr-4 py-3 border border-dark-200 rounded-xl text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                  />
+                  <p className="mt-2 text-xs text-dark-500">
+                    지원 형식: JPG, PNG, GIF, WebP, SVG (최대 5MB)
+                  </p>
                 </div>
-                {formData.image_url && (
+
+                {/* OR Divider */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 h-px bg-dark-200"></div>
+                  <span className="text-sm text-dark-500 font-medium">
+                    또는
+                  </span>
+                  <div className="flex-1 h-px bg-dark-200"></div>
+                </div>
+
+                {/* Image URL Field */}
+                <div>
+                  <label
+                    htmlFor="image_url"
+                    className="block text-xs font-medium text-dark-700 mb-2"
+                  >
+                    이미지 URL 직접 입력
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <svg
+                        className="w-5 h-5 text-dark-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      id="image_url"
+                      name="image_url"
+                      value={formData.image_url}
+                      onChange={handleImageUrlChange}
+                      placeholder="https://example.com/image.jpg"
+                      disabled={!!imageFileData.image_url}
+                      className="w-full pl-12 pr-4 py-3 border border-dark-200 rounded-xl text-dark-900 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 disabled:bg-dark-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  {imageFileData.image_url && (
+                    <p className="mt-2 text-xs text-primary-600">
+                      이미지 파일이 업로드되어 URL 입력이 비활성화되었습니다
+                    </p>
+                  )}
+                </div>
+
+                {/* Image Preview */}
+                {(imageFileData.image_url || formData.image_url) && (
                   <div className="mt-4 rounded-xl overflow-hidden border border-dark-200 shadow-soft">
                     <img
-                      src={formData.image_url}
+                      src={imageFileData.image_url || formData.image_url}
                       alt="Preview"
                       className="w-full h-auto max-h-64 object-cover"
                       onError={(e) => {
@@ -474,7 +624,7 @@ export default function EditPressMediaPage() {
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isUploadingImage}
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-600 transition-all duration-200 shadow-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? "수정 중..." : "수정하기"}

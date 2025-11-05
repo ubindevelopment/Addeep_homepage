@@ -166,3 +166,69 @@ export async function uploadPressFile(file: File) {
     };
   }
 }
+
+export async function uploadPressImage(file: File) {
+  try {
+    // 이미지 파일 타입 체크
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      return {
+        success: false,
+        error:
+          "지원하지 않는 이미지 형식입니다. (JPG, PNG, GIF, WebP, SVG만 가능)",
+      };
+    }
+
+    // 파일 크기 체크 (5MB 제한)
+    if (file.size > 5 * 1024 * 1024) {
+      return {
+        success: false,
+        error: "이미지 파일 크기는 5MB를 초과할 수 없습니다.",
+      };
+    }
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `press-media/images/${fileName}`;
+
+    const { data, error } = await supabaseAdmin.storage
+      .from("press-media")
+      .upload(filePath, file);
+
+    if (error) {
+      console.error("이미지 업로드 에러:", error);
+      return {
+        success: false,
+        error: error.message || "이미지 업로드 중 오류가 발생했습니다.",
+      };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage.from("press-media").getPublicUrl(filePath);
+
+    return {
+      success: true,
+      image_url: publicUrl,
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+    };
+  } catch (err) {
+    console.error("uploadPressImage 에러:", err);
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "이미지 업로드 중 오류가 발생했습니다.",
+    };
+  }
+}

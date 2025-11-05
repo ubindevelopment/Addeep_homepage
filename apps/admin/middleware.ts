@@ -9,8 +9,17 @@ export async function middleware(req: any) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session && req.nextUrl.pathname !== "/login") {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // 보호된 경로 목록
+  const protectedPaths = ["/dashboard"];
+  const isProtectedPath = protectedPaths.some((path) =>
+    req.nextUrl.pathname.startsWith(path)
+  );
+
+  // 세션이 없고 보호된 경로에 접근하려는 경우
+  if (!session && isProtectedPath) {
+    const url = new URL("/", req.url);
+    url.searchParams.set("auth_required", "true");
+    return NextResponse.redirect(url);
   }
 
   return res;

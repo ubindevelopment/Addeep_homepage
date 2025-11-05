@@ -1,17 +1,36 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn, isLoading } = useAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [authRequired, setAuthRequired] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("auth_required") === "true") {
+      setAuthRequired(true);
+      setError("로그인이 필요합니다.");
+      // URL에서 쿼리 파라미터 제거
+      const url = new URL(window.location.href);
+      url.searchParams.delete("auth_required");
+      window.history.replaceState({}, "", url.pathname);
+
+      // 3초 후 에러 메시지 자동 제거
+      setTimeout(() => {
+        setAuthRequired(false);
+        setError("");
+      }, 3000);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,10 +96,18 @@ export default function AdminPage() {
           {/* Form */}
           <form className="space-y-5" onSubmit={handleSubmit} method="post">
             {error && (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+              <div
+                className={`p-4 rounded-xl border ${
+                  authRequired
+                    ? "bg-yellow-50 border-yellow-200"
+                    : "bg-red-50 border-red-200"
+                } transition-all duration-300 animate-fade-in`}
+              >
                 <div className="flex items-center">
                   <svg
-                    className="h-5 w-5 text-red-500 mr-2"
+                    className={`h-5 w-5 mr-2 ${
+                      authRequired ? "text-yellow-500" : "text-red-500"
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -89,10 +116,20 @@ export default function AdminPage() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d={
+                        authRequired
+                          ? "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          : "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      }
                     />
                   </svg>
-                  <p className="text-sm font-medium text-red-800">{error}</p>
+                  <p
+                    className={`text-sm font-medium ${
+                      authRequired ? "text-yellow-800" : "text-red-800"
+                    }`}
+                  >
+                    {error}
+                  </p>
                 </div>
               </div>
             )}
